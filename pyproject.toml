@@ -21,3 +21,62 @@ pytest-cov = "^6.2.1"
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "-vv --cov=orbital --cov-report=term-missing --cov-report=html -p"
+testpaths = [
+    "tests",
+]
+
+[tool.ruff]
+line-length = 79
+indent-width = 4
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+[tool.ruff.lint]
+preview = true
+select = ['I', 'F', 'E', 'W', 'PL', 'PT']
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+preview = true
+quote-style = 'single'
+indent-style = "space"
+docstring-code-format = false
+
+[tool.taskipy.tasks]
+lint = 'ruff check . && ruff check . --diff'
+format = 'ruff check . --fix && ruff format .'
+pre_test = 'task format'
+test = 'pytest -vv --cov=orbital --cov-report=term-missing -p'
+post_test = 'coverage html'
+docs = "mkdocs serve"
+bdocs = "mkdocs build"
