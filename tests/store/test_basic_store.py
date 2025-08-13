@@ -11,8 +11,8 @@ from orbital.store.basic_store import (
 @pytest.fixture
 def sample_reducer() -> Reducer:
     def reducer(state: State, action: str) -> State:
-        if action == "increment":
-            return {"count": state.get("count", 0) + 1}
+        if action == 'increment':
+            return {'count': state.get('count', 0) + 1}
         return state
 
     return reducer
@@ -21,8 +21,8 @@ def sample_reducer() -> Reducer:
 @pytest.fixture
 def second_reducer() -> Reducer:
     def reducer(state: State, action: str) -> State:
-        if action == "decrement":
-            return {"count": state.get("count", 0) - 1}
+        if action == 'decrement':
+            return {'count': state.get('count', 0) - 1}
         return state
 
     return reducer
@@ -30,18 +30,19 @@ def second_reducer() -> Reducer:
 
 def test_combine_reducers(sample_reducer, second_reducer):
     combined = combine_reducers([sample_reducer, second_reducer])
-    assert combined({"count": 0}, "increment") == {"count": 1}
-    assert combined({"count": 1}, "decrement") == {"count": 0}
+    assert combined({'count': 0}, 'increment') == {'count': 1}
+    assert combined({'count': 1}, 'decrement') == {'count': 0}
 
 
 def test_combined_reducer_raising_error(sample_reducer, second_reducer):
     def invalid_reducer(state: State, action: str) -> str:
-        return "invalid_state"
+        return 'invalid_state'
+
     combined = combine_reducers(
         [sample_reducer, second_reducer, invalid_reducer],  # type: ignore
     )
     with pytest.raises(ValueError):  # noqa: PT011
-        combined({"count": 0}, "unknown_action")
+        combined({'count': 0}, 'unknown_action')
 
 
 def test_notifier_subscribe_doesnt_change_store(
@@ -50,7 +51,7 @@ def test_notifier_subscribe_doesnt_change_store(
 ):
     store = BasicStore(
         reducer=sample_reducer,
-        current_state={"count": 0},
+        current_state={'count': 0},
     )
     observer_1 = concrete_observer()
     store.subscribe(observer_1)
@@ -82,9 +83,9 @@ def test_notifier_notify_subscribers_doesnt_change_store(
     )
     observer1 = concrete_observer()
     store.subscribe(observer1)
-    store.notify_subscribers("Test message")
+    store.notify_subscribers('Test message')
     captured = capsys.readouterr()
-    assert "Test message" in captured.out
+    assert 'Test message' in captured.out
 
 
 def test_get_state(sample_reducer):
@@ -100,7 +101,7 @@ def test_dispatch_action(sample_reducer):
         reducer=sample_reducer,
         current_state={'count': 0},
     )
-    new_store = store.dispatch("increment")
+    new_store = store.dispatch('increment')
     assert store.get_state() == {'count': 0}
     assert new_store.get_state() == {'count': 1}
 
@@ -115,12 +116,12 @@ def test_update_state_raises_value_error_at_invalid_state():
         current_state={'count': 0},
     )
     with pytest.raises(ValueError):  # noqa: PT011
-        store.dispatch("increment")
+        store.dispatch('increment')
 
 
 def test_dispatch_should_raise_value_error_on_invalid_type_state():
     def invalid_reducer(state: State, action: str) -> str:
-        return "invalid_state"
+        return 'invalid_state'
 
     store = BasicStore(
         reducer=invalid_reducer,  # type: ignore
@@ -128,7 +129,7 @@ def test_dispatch_should_raise_value_error_on_invalid_type_state():
     )
 
     with pytest.raises(ValueError):  # noqa: PT011
-        store.dispatch("increment")
+        store.dispatch('increment')
 
 
 def test_current_state_is_imutable(

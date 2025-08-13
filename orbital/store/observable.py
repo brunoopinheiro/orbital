@@ -5,7 +5,6 @@ from orbital.abstract.observer import Observer
 
 
 class Observable(AbstractObservable):
-
     def __init__(
         self,
         subscribers: List[Observer] = [],

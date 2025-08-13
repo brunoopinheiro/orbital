@@ -27,15 +27,38 @@ def combine_reducers(reducers: List[Reducer]) -> Reducer:
             new_state = reducer(old_state, action)
             if not isinstance(new_state, dict):
                 raise ValueError(
-                    f"Reducer {reducer} did not return a valid state,"
-                    f" when called for {action}."
+                    f'Reducer {reducer} did not return a valid state,'
+                    f' when called for {action}.'
                 )
             old_state.update(new_state)
         return old_state
+
     return combined
 
 
 class BasicStore:
+    """Implementation of the basic structure of the store. It provides
+    state immutability and a way to manage state changes through actions.
+    This class performs checks to assure the validity of state updates.
+
+    Args:
+        reducer (Reducer): The reducer function to manage state changes.
+        current_state (State): The initial state of the store.
+
+    Properties:
+        current_state (State): The current state of the store.
+
+    Methods:
+        subscribe(observer: Observer) -> None: Subscribes an observer to the
+            store.
+        unsubscribe(observer: Observer) -> None: Unsubscribes an observer from
+            the store.
+        notify_subscribers(message: str) -> None: Notifies all subscribers
+            about a state change.
+        get_state() -> State: Returns the current state of the store.
+        dispatch(action: str) -> 'BasicStore': Dispatches an action to update
+            the store's state.
+    """
 
     def __init__(
         self,
@@ -48,6 +71,11 @@ class BasicStore:
 
     @property
     def current_state(self) -> State:
+        """Returns a deep copy of the current state.
+
+        Returns:
+            State: The current state of the store.
+        """
         current_state = deepcopy(self.__current_state)
         return current_state
 
@@ -69,6 +97,11 @@ class BasicStore:
 
     @property
     def _notifier(self) -> Observable:
+        """Returns the notifier for the store.
+
+        Returns:
+            Observable: The notifier for the store.
+        """
         return self.__notifier
 
     def subscribe(self, subscriber: Observer) -> None:
@@ -104,6 +137,18 @@ class BasicStore:
         return self.current_state
 
     def __update_state(self, new_state: State) -> 'BasicStore':
+        """Updates the state of the store.
+
+        Args:
+            new_state (State): The new state to set.
+
+        Raises:
+            ValueError: If the new state does not contain all keys from the
+                current state.
+
+        Returns:
+            BasicStore: The updated store.
+        """
         if self.__check_state_keys(new_state) is False:
             raise ValueError(
                 'The state must contain all keys from the current state.'
@@ -121,6 +166,6 @@ class BasicStore:
         """
         new_state = self.__reducer(self.current_state, action)
         if not isinstance(new_state, dict):
-            raise ValueError("Reducer must return a valid state.")
+            raise ValueError('Reducer must return a valid state.')
 
         return self.__update_state(new_state)
