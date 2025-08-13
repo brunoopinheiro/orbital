@@ -23,7 +23,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "-vv --cov=orbital --cov-report=term-missing --cov-report=html -p"
+addopts = "-vv --cov=orbital --cov-report=term-missing --cov-report=html"
 testpaths = [
     "tests",
 ]
@@ -76,7 +76,7 @@ docstring-code-format = false
 lint = 'ruff check . && ruff check . --diff'
 format = 'ruff check . --fix && ruff format .'
 pre_test = 'task format'
-test = 'pytest -vv --cov=orbital --cov-report=term-missing -p'
+test = 'pytest -vv --cov=orbital --cov-report=term-missing'
 post_test = 'coverage html'
 docs = "mkdocs serve"
 bdocs = "mkdocs build"
