@@ -1,5 +1,4 @@
 from copy import deepcopy
-from dataclasses import dataclass, field
 from json import dumps
 from typing import Any, Callable, Dict, List, TypeAlias
 
@@ -36,29 +35,21 @@ def combine_reducers(reducers: List[Reducer]) -> Reducer:
     return combined
 
 
-@dataclass(frozen=True)
 class BasicStore:
-    reducer: Reducer
-    current_state: State = field(
-        default_factory=dict,
-        metadata={
-            'description': 'Represents the current state of the store. This is a frozen dataclass, meaning its instances are immutable.',  # noqa
-        },
-        kw_only=True,
-    )
-    subscribers: List[Observer] = field(
-        default_factory=list,
-        metadata={
-            'description': 'A list of subscribers to the store. Subscribers are notified when the store\'s state changes.',  # noqa
-        },
-    )
-    __notifier: Observable = field(
-        init=False,
-        default=Observable(),
-        metadata={
-            'description': 'An instance of the Observable class, used to manage subscriptions and notifications.',  # noqa
-        }
-    )
+
+    def __init__(
+        self,
+        reducer: Reducer,
+        current_state: State,
+    ) -> None:
+        self.__reducer = reducer
+        self.__current_state = current_state
+        self.__notifier = Observable()
+
+    @property
+    def current_state(self) -> State:
+        current_state = deepcopy(self.__current_state)
+        return current_state
 
     def __check_state_keys(self, new_state: State) -> bool:
         """Checks if the new state contains all keys from the current state.
@@ -73,7 +64,12 @@ class BasicStore:
         """
         curr_state_keys = set(self.current_state.keys())
         new_state_keys = set(new_state.keys())
-        return curr_state_keys.difference(new_state_keys) == set()
+        all_keys_match = curr_state_keys == new_state_keys
+        return all_keys_match
+
+    @property
+    def _notifier(self) -> Observable:
+        return self.__notifier
 
     def subscribe(self, subscriber: Observer) -> None:
         """Subscribes an observer to the store.
@@ -108,13 +104,13 @@ class BasicStore:
         return self.current_state
 
     def __update_state(self, new_state: State) -> 'BasicStore':
-        if not self.__check_state_keys(new_state):
+        if self.__check_state_keys(new_state) is False:
             raise ValueError(
                 'The state must contain all keys from the current state.'
             )
         self.notify_subscribers(dumps(new_state, skipkeys=True))
         return BasicStore(
-            reducer=self.reducer,
+            reducer=self.__reducer,
             current_state=new_state,
         )
 
@@ -123,8 +119,8 @@ class BasicStore:
         Dispatches an action to update the store's state.
         The action should be a dictionary with a 'type' key.
         """
-        if not isinstance(action, dict) or 'type' not in action:
-            raise ValueError("Action must be a dictionary with a 'type' key.")
+        new_state = self.__reducer(self.current_state, action)
+        if not isinstance(new_state, dict):
+            raise ValueError("Reducer must return a valid state.")
 
-        new_state = self.reducer(self.current_state, action)
         return self.__update_state(new_state)
