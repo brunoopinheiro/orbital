@@ -1,6 +1,10 @@
 from copy import deepcopy
 from dataclasses import dataclass, field
+from json import dumps
 from typing import Any, Callable, Dict, List, TypeAlias
+
+from orbital.abstract.observer import Observer
+from orbital.store.observable import Observable
 
 State: TypeAlias = Dict[str, Any]
 Reducer: TypeAlias = Callable[[State, str], State]
@@ -42,6 +46,19 @@ class BasicStore:
         },
         kw_only=True,
     )
+    subscribers: List[Observer] = field(
+        default_factory=list,
+        metadata={
+            'description': 'A list of subscribers to the store. Subscribers are notified when the store\'s state changes.',  # noqa
+        },
+    )
+    __notifier: Observable = field(
+        init=False,
+        default=Observable(),
+        metadata={
+            'description': 'An instance of the Observable class, used to manage subscriptions and notifications.',  # noqa
+        }
+    )
 
     def __check_state_keys(self, new_state: State) -> bool:
         """Checks if the new state contains all keys from the current state.
@@ -58,6 +75,30 @@ class BasicStore:
         new_state_keys = set(new_state.keys())
         return curr_state_keys.difference(new_state_keys) == set()
 
+    def subscribe(self, subscriber: Observer) -> None:
+        """Subscribes an observer to the store.
+
+        Args:
+            subscriber (Observer): The observer to subscribe.
+        """
+        self.__notifier.subscribe(subscriber)
+
+    def unsubscribe(self, subscriber: Observer) -> None:
+        """Unsubscribes an observer from the store.
+
+        Args:
+            subscriber (Observer): The observer to unsubscribe.
+        """
+        self.__notifier.unsubscribe(subscriber)
+
+    def notify_subscribers(self, message: str) -> None:
+        """Notifies all subscribers about a state change.
+
+        Args:
+            message (str): The message to send to subscribers.
+        """
+        self.__notifier.notify_subscribers(message)
+
     def get_state(self) -> State:
         """Returns the current state of the store.
 
@@ -71,6 +112,7 @@ class BasicStore:
             raise ValueError(
                 'The state must contain all keys from the current state.'
             )
+        self.notify_subscribers(dumps(new_state, skipkeys=True))
         return BasicStore(
             reducer=self.reducer,
             current_state=new_state,
